@@ -238,6 +238,13 @@ h1.mondrian-header {
     height: 30vh;
     border-right: none;
     border-bottom: 6px solid #000;
+        /* 顶部内边距自动为安全区高度，兼容 iOS 刘海 */
+    padding-top: env(safe-area-inset-top);
+    /* 如果你之前把高度固定为 30vh，这里要减去安全区高度 */
+    height: calc(30vh - env(safe-area-inset-top));
+    /* 其它保持不变 */
+    border-right: none;
+    border-bottom: 6px solid #000;
   }
 
   .sidebar {
@@ -281,4 +288,22 @@ h1.mondrian-header {
   display: inline-block;
   text-align: center;
   text-decoration: none;
+}
+
+/* 调整评分和距离块 */
+.block.rating,
+.block.distance {
+  font-size: 0.8rem;           /* 缩小字体 */
+  white-space: nowrap;         /* 禁止换行 */
+  overflow: hidden;            /* 超出隐藏 */
+  text-overflow: ellipsis;     /* 用省略号表示隐藏部分 */
+}
+
+/* 调整摘要块 */
+.block.summary {
+  padding: 8px;                /* 减少上下内边距 */
+  font-size: 0.8rem;           /* 缩小字体 */
+  white-space: nowrap;         /* 禁止换行 */
+  overflow: hidden;            /* 超出隐藏 */
+  text-overflow: ellipsis;     /* 用省略号表示隐藏部分 */
 }
