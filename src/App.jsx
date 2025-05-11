@@ -1,15 +1,24 @@
-// Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons
+// src/App.jsx
+// Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons + 定位按钮
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents
+} from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
 });
 
 function StarRating({ value, onChange }) {
@@ -19,7 +28,11 @@ function StarRating({ value, onChange }) {
         <span
           key={star}
           onClick={() => onChange(star)}
-          style={{ fontSize: '1.2rem', color: star <= value ? '#FFD700' : '#ccc', cursor: 'pointer' }}
+          style={{
+            fontSize: '1.2rem',
+            color: star <= value ? '#FFD700' : '#ccc',
+            cursor: 'pointer'
+          }}
         >
           ★
         </span>
@@ -28,52 +41,64 @@ function StarRating({ value, onChange }) {
   );
 }
 
-function App() {
+function ClickHandler({ onCenterChange }) {
+  useMapEvents({
+    click(e) {
+      const lat = e.latlng.lat;
+      const lng = e.latlng.lng;
+      onCenterChange([lat, lng]);
+    },
+    moveend(e) {
+      const c = e.target.getCenter();
+      onCenterChange([c.lat, c.lng]);
+    }
+  });
+  return null;
+}
+
+export default function App() {
   const [mapCenter, setMapCenter] = useState([35.6895, 139.6917]);
   const [toilets, setToilets] = useState([]);
   const [selectedToilet, setSelectedToilet] = useState(null);
   const [addingLocation, setAddingLocation] = useState(null);
   const [newToilet, setNewToilet] = useState({ name: '', description: '' });
   const [address, setAddress] = useState('');
-  const [ratings, setRatings] = useState({ cleanliness: 3, accessibility: 3, crowd: 3 });
+  const [ratings, setRatings] = useState({
+    cleanliness: 3,
+    accessibility: 3,
+    crowd: 3
+  });
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [commentText, setCommentText] = useState('');
-  const [commentRating, setCommentRating] = useState({ cleanliness: 3, accessibility: 3, crowd: 3 });
+  const [commentRating, setCommentRating] = useState({
+    cleanliness: 3,
+    accessibility: 3,
+    crowd: 3
+  });
 
   useEffect(() => {
+    // 首次加载时定位到当前位置
     navigator.geolocation.getCurrentPosition(
-      (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
-      () => console.warn('Geolocation failed. Using default location.')
+      (pos) =>
+        setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+      () => console.warn('Geolocation failed. Using default.')
     );
     fetchToilets();
   }, []);
 
   function fetchToilets() {
-    fetch("https://sifa-backend.onrender.com/toilets")
-      .then(res => res.json())
-      .then(data => setToilets(data))
-      .catch(err => console.error("Failed to load toilets:", err));
+    fetch('https://sifa-backend.onrender.com/toilets')
+      .then((res) => res.json())
+      .then((data) => setToilets(data))
+      .catch((err) => console.error('Failed to load toilets:', err));
   }
 
-  function ClickHandler() {
-    useMapEvents({
-      click(e) {
-        const lat = e.latlng.lat;
-        const lng = e.latlng.lng;
-        setSelectedToilet(null);
-        setAddingLocation([lat, lng]);
-        setSidebarVisible(true);
-        fetch(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`)
-          .then(res => res.json())
-          .then(data => setAddress(data.display_name || ''))
-          .catch(() => setAddress(''));
-      },
-      moveend(e) {
-        const center = e.target.getCenter();
-        setMapCenter([center.lat, center.lng]);
-      }
-    });
-    return null;
+  // 点击定位按钮时调用
+  function handleLocate() {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+      () => alert('无法获取位置，请检查定位权限。')
+    );
   }
 
   function handleAddNewToilet(e) {
@@ -84,28 +109,30 @@ function App() {
       lat: addingLocation[0],
       lng: addingLocation[1],
       address,
-      summary: "",
-      comments: [{ text: newToilet.description, timestamp: new Date().toISOString() }],
+      summary: '',
+      comments: [
+        { text: newToilet.description, timestamp: new Date().toISOString() }
+      ],
       ratings,
       createdAt: new Date().toISOString()
     };
 
-    fetch("https://sifa-backend.onrender.com/toilets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+    fetch('https://sifa-backend.onrender.com/toilets', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     })
-      .then(res => res.json())
-      .then(newToiletEntry => {
-        setToilets(prev => [...prev, newToiletEntry]);
+      .then((res) => res.json())
+      .then((newEntry) => {
+        setToilets((prev) => [...prev, newEntry]);
         setAddingLocation(null);
         setAddress('');
         setNewToilet({ name: '', description: '' });
         setRatings({ cleanliness: 3, accessibility: 3, crowd: 3 });
       })
-      .catch(err => {
-        console.error("Failed to add toilet:", err);
-        alert("Something went wrong 💥");
+      .catch((err) => {
+        console.error('Failed to add toilet:', err);
+        alert('Something went wrong 💥');
       });
   }
 
@@ -119,41 +146,56 @@ function App() {
       ratings: commentRating
     };
 
-    fetch(`https://sifa-backend.onrender.com/toilets/${toiletId}/comment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newCommentData)
-    })
-      .then(res => res.json())
+    fetch(
+      `https://sifa-backend.onrender.com/toilets/${toiletId}/comment`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newCommentData)
+      }
+    )
+      .then((res) => res.json())
       .then(() => {
-        setToilets(prev => prev.map(t =>
-          t.id === toiletId ? {
-            ...t,
-            comments: [...t.comments, newCommentData],
-            ratings: {
-              cleanliness: [...t.ratings.cleanliness, commentRating.cleanliness],
-              accessibility: [...t.ratings.accessibility, commentRating.accessibility],
-              crowd: [...t.ratings.crowd, commentRating.crowd]
-            }
-          } : t
-        ));
-        setSelectedToilet(prev => prev ? { ...prev, comments: [...prev.comments, newCommentData] } : null);
+        setToilets((prev) =>
+          prev.map((t) =>
+            t.id === toiletId
+              ? {
+                  ...t,
+                  comments: [...t.comments, newCommentData],
+                  ratings: {
+                    cleanliness: [
+                      ...t.ratings.cleanliness,
+                      commentRating.cleanliness
+                    ],
+                    accessibility: [
+                      ...t.ratings.accessibility,
+                      commentRating.accessibility
+                    ],
+                    crowd: [...t.ratings.crowd, commentRating.crowd]
+                  }
+                }
+              : t
+          )
+        );
         setCommentText('');
         setCommentRating({ cleanliness: 3, accessibility: 3, crowd: 3 });
       })
-      .catch(err => {
-        console.error("Comment error:", err);
-        alert("💥 Failed to add comment");
+      .catch((err) => {
+        console.error('Comment error:', err);
+        alert('💥 Failed to add comment');
       });
   }
 
-  const sortedToilets = toilets.map((t) => ({
-    ...t,
-    distance: getDistance(mapCenter, [t.lat, t.lng])
-  })).sort((a, b) => a.distance - b.distance);
+  // 计算距离并排序
+  const sortedToilets = toilets
+    .map((t) => ({
+      ...t,
+      distance: getDistance(mapCenter, [t.lat, t.lng])
+    }))
+    .sort((a, b) => a.distance - b.distance);
 
   function getDistance(a, b) {
-    const toRad = (value) => (value * Math.PI) / 180;
+    const toRad = (v) => (v * Math.PI) / 180;
     const R = 6371e3;
     const φ1 = toRad(a[0]);
     const φ2 = toRad(b[0]);
@@ -171,18 +213,43 @@ function App() {
     <div className="app-container">
       <h1 className="mondrian-header">🚽</h1>
       <div className="map-and-sidebar">
-        <div id="map-wrapper" style={{ flex: shouldShowSidebar ? 2 : 1 }}>
+        <div id="map-wrapper" style={{ position: 'relative', flex: shouldShowSidebar ? 2 : 1 }}>
+          {/* 定位按钮 */}
+          <button
+            onClick={handleLocate}
+            style={{
+              position: 'absolute',
+              top: 10,
+              right: 10,
+              zIndex: 1000,
+              background: '#fff',
+              border: '2px solid #000',
+              padding: '6px 10px',
+              cursor: 'pointer'
+            }}
+          >
+            📍
+          </button>
+
+          {/* 地图 */}
           <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
-            <TileLayer attribution='&copy; OpenStreetMap contributors' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+            <TileLayer
+              attribution="&copy; OpenStreetMap contributors"
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            />
             <ClickHandler onCenterChange={setMapCenter} />
-            {toilets.map((t) => (
-              <Marker key={t.id} position={[t.lat, t.lng]} eventHandlers={{
-                click: () => {
-                  setSelectedToilet(t);
-                  setAddingLocation(null);
-                  setSidebarVisible(true);
-                },
-              }} />
+            {sortedToilets.map((t) => (
+              <Marker
+                key={t.id}
+                position={[t.lat, t.lng]}
+                eventHandlers={{
+                  click: () => {
+                    setSelectedToilet(t);
+                    setAddingLocation(null);
+                    setSidebarVisible(true);
+                  }
+                }}
+              />
             ))}
             <Marker position={mapCenter} />
           </MapContainer>
