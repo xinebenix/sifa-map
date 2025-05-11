@@ -29,7 +29,7 @@ function StarRating({ value, onChange }) {
 }
 
 function App() {
-  const [mapCenter, setMapCenter] = useState([35.6895, 139.6917]);
+  const [mapCenter, setMapCenter] = useState(null);
   const [toilets, setToilets] = useState([]);
   const [selectedToilet, setSelectedToilet] = useState(null);
   const [addingLocation, setAddingLocation] = useState(null);
@@ -182,7 +182,29 @@ function App() {
       <h1 className="mondrian-header">🚽</h1>
       <div className="map-and-sidebar">
         <div id="map-wrapper" style={{ flex: shouldShowSidebar ? 2 : 1 }}>
-          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+          {mapCenter && (
+              <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+                <TileLayer
+                  attribution='&copy; OpenStreetMap contributors'
+                  url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+                />
+                <ClickHandler />
+                {toilets.map((t) => (
+                  <Marker
+                    key={t.id}
+                    position={[t.lat, t.lng]}
+                    eventHandlers={{
+                      click: () => {
+                        setSelectedToilet(t);
+                        setAddingLocation(null);
+                        setSidebarVisible(true);
+                      },
+                    }}
+                  />
+                ))}
+                <Marker position={mapCenter} />
+              </MapContainer>
+            )}
             <TileLayer attribution='&copy; OpenStreetMap contributors' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
             <ClickHandler />
             {toilets.map((t) => (
