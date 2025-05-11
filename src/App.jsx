@@ -42,19 +42,10 @@ function App() {
 
   useEffect(() => {
     navigator.permissions?.query({ name: "geolocation" }).then((result) => {
-      if (result.state === "granted") {
+      if (result.state === "granted" || result.state === "prompt") {
         navigator.geolocation.getCurrentPosition(
-          (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude])
-        );
-      } else if (result.state === "prompt") {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            setMapCenter([pos.coords.latitude, pos.coords.longitude]);
-            window.location.reload(); // 自动刷新让地图以当前中心加载
-          },
-          () => {
-            console.warn('User denied location access.');
-          }
+          (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+          () => console.warn('User denied location access.')
         );
       }
     }).catch(() => {
