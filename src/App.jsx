@@ -74,11 +74,9 @@ function App() {
   });
 
   useEffect(() => {
-    // 初始定位到浏览器当前位置
     navigator.geolocation.getCurrentPosition(
-      (pos) =>
-        setMapCenter([pos.coords.latitude, pos.coords.longitude]),
-      () => console.warn('Geolocation failed. Using default location.')
+      (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+      () => console.warn('Geolocation failed.')
     );
     fetchToilets();
   }, []);
@@ -106,8 +104,8 @@ function App() {
           .catch(() => setAddress(''));
       },
       moveend(e) {
-        const center = e.target.getCenter();
-        setMapCenter([center.lat, center.lng]);
+        const c = e.target.getCenter();
+        onCenterChange([c.lat, c.lng]);
       }
     });
     return null;
@@ -234,7 +232,7 @@ function App() {
           style={{ flex: shouldShowSidebar ? 2 : 1 }}
         >
           <MapContainer
-            center={mapCenter}
+            defaultCenter={mapCenter}  // ← 这里改成 defaultCenter
             zoom={14}
             style={{ height: '100%', width: '100%' }}
           >
@@ -242,20 +240,9 @@ function App() {
               attribution="&copy; OpenStreetMap contributors"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
-            <ClickHandler />
-            <SetViewOnInit center={mapCenter} />
+            <ClickHandler onCenterChange={setMapCenter} />
             {toilets.map((t) => (
-              <Marker
-                key={t.id}
-                position={[t.lat, t.lng]}
-                eventHandlers={{
-                  click: () => {
-                    setSelectedToilet(t);
-                    setAddingLocation(null);
-                    setSidebarVisible(true);
-                  }
-                }}
-              />
+              <Marker key={t.id} position={[t.lat, t.lng]} />
             ))}
             <Marker position={mapCenter} />
           </MapContainer>
