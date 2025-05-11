@@ -1,4 +1,4 @@
-// Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons
+// Finalized // Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons
 import React, { useEffect, useState } from 'react';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
@@ -44,7 +44,9 @@ function App() {
     navigator.permissions?.query({ name: "geolocation" }).then((result) => {
       if (result.state === "granted" || result.state === "prompt") {
         navigator.geolocation.getCurrentPosition(
-          (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+          (pos) => {
+            setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+          },
           () => console.warn('User denied location access.')
         );
       }
@@ -90,103 +92,12 @@ function App() {
     const map = useMapEvents({});
     useEffect(() => {
       if (center) {
-        map.setView(center, 14); // 同步视图
+        map.setView(center, map.getZoom());
       }
     }, [center]);
     return null;
   }
-
-  function handleAddNewToilet(e) {
-    e.preventDefault();
-    const payload = {
-      name: newToilet.name,
-      description: newToilet.description,
-      lat: addingLocation[0],
-      lng: addingLocation[1],
-      address,
-      summary: "",
-      comments: [{ text: newToilet.description, timestamp: new Date().toISOString() }],
-      ratings,
-      createdAt: new Date().toISOString()
-    };
-
-    fetch("https://sifa-backend.onrender.com/toilets", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    })
-      .then(res => res.json())
-      .then(newToiletEntry => {
-        setToilets(prev => [...prev, newToiletEntry]);
-        setAddingLocation(null);
-        setAddress('');
-        setNewToilet({ name: '', description: '' });
-        setRatings({ cleanliness: 3, accessibility: 3, crowd: 3 });
-      })
-      .catch(err => {
-        console.error("Failed to add toilet:", err);
-        alert("Something went wrong 💥");
-      });
-  }
-
-  function handleCommentSubmit(e, toiletId) {
-    e.preventDefault();
-    if (!commentText.trim()) return;
-
-    const newCommentData = {
-      text: commentText.trim(),
-      timestamp: new Date().toISOString(),
-      ratings: commentRating
-    };
-
-    fetch(`https://sifa-backend.onrender.com/toilets/${toiletId}/comment`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(newCommentData)
-    })
-      .then(res => res.json())
-      .then(() => {
-        setToilets(prev => prev.map(t =>
-          t.id === toiletId ? {
-            ...t,
-            comments: [...t.comments, newCommentData],
-            ratings: {
-              cleanliness: [...t.ratings.cleanliness, commentRating.cleanliness],
-              accessibility: [...t.ratings.accessibility, commentRating.accessibility],
-              crowd: [...t.ratings.crowd, commentRating.crowd]
-            }
-          } : t
-        ));
-        setSelectedToilet(prev => prev ? { ...prev, comments: [...prev.comments, newCommentData] } : null);
-        setCommentText('');
-        setCommentRating({ cleanliness: 3, accessibility: 3, crowd: 3 });
-      })
-      .catch(err => {
-        console.error("Comment error:", err);
-        alert("💥 Failed to add comment");
-      });
-  }
-
-  const sortedToilets = toilets.map((t) => ({
-    ...t,
-    distance: getDistance(mapCenter, [t.lat, t.lng])
-  })).sort((a, b) => a.distance - b.distance);
-
-  function getDistance(a, b) {
-    const toRad = (value) => (value * Math.PI) / 180;
-    const R = 6371e3;
-    const φ1 = toRad(a[0]);
-    const φ2 = toRad(b[0]);
-    const Δφ = toRad(b[0] - a[0]);
-    const Δλ = toRad(b[1] - a[1]);
-    const x = Δλ * Math.cos((φ1 + φ2) / 2);
-    const y = Δφ;
-    return Math.sqrt(x * x + y * y) * R;
-  }
-
-  const isMobile = window.innerWidth <= 768;
-  const shouldShowSidebar = !isMobile || sidebarVisible;
-
+  
   return (
     <div className="app-container">
       <h1 className="mondrian-header">🚽</h1>
