@@ -29,7 +29,7 @@ function StarRating({ value, onChange }) {
 }
 
 function App() {
-  const [mapCenter, setMapCenter] = useState(null);
+  const [mapCenter, setMapCenter] = useState([35.6895, 139.6917]);
   const [toilets, setToilets] = useState([]);
   const [selectedToilet, setSelectedToilet] = useState(null);
   const [addingLocation, setAddingLocation] = useState(null);
@@ -41,8 +41,8 @@ function App() {
   const [commentRating, setCommentRating] = useState({ cleanliness: 3, accessibility: 3, crowd: 3 });
 
   useEffect(() => {
-    navigator.permissions?.query({ name: 'geolocation' }).then((result) => {
-      if (result.state === 'granted' || result.state === 'prompt') {
+    navigator.permissions?.query({ name: "geolocation" }).then((result) => {
+      if (result.state === "granted" || result.state === "prompt") {
         navigator.geolocation.getCurrentPosition(
           (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
           () => console.warn('User denied location access.')
@@ -83,6 +83,16 @@ function App() {
         setMapCenter([center.lat, center.lng]);
       }
     });
+    return null;
+  }
+
+  function SetViewOnInit({ center }) {
+    const map = useMapEvents({});
+    useEffect(() => {
+      if (center) {
+        map.setView(center, 14); // 同步视图
+      }
+    }, [center]);
     return null;
   }
 
@@ -182,33 +192,105 @@ function App() {
       <h1 className="mondrian-header">🚽</h1>
       <div className="map-and-sidebar">
         <div id="map-wrapper" style={{ flex: shouldShowSidebar ? 2 : 1 }}>
-          {mapCenter && (
-            <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
-              <TileLayer
-                attribution='&copy; OpenStreetMap contributors'
-                url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
-              />
-              <ClickHandler />
-              {toilets.map((t) => (
-                <Marker
-                  key={t.id}
-                  position={[t.lat, t.lng]}
-                  eventHandlers={{
-                    click: () => {
-                      setSelectedToilet(t);
-                      setAddingLocation(null);
-                      setSidebarVisible(true);
-                    },
-                  }}
-                />
-              ))}
-              <Marker position={mapCenter} />
-            </MapContainer>
-          )}
+          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+            <TileLayer attribution='&copy; OpenStreetMap contributors' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
+            <ClickHandler />
+            <SetViewOnInit center={mapCenter} />
+            {toilets.map((t) => (
+              <Marker key={t.id} position={[t.lat, t.lng]} eventHandlers={{
+                click: () => {
+                  setSelectedToilet(t);
+                  setAddingLocation(null);
+                  setSidebarVisible(true);
+                },
+              }} />
+            ))}
+            <Marker position={mapCenter} />
+          </MapContainer>
         </div>
 
-        {/* SIDEBAR CONTENT HERE... (unchanged) */}
+        {shouldShowSidebar && (
+          <div className="sidebar">
+            <button className="sidebar-toggle" onClick={() => setSidebarVisible(false)}>❌</button>
 
+            {addingLocation ? (
+              <div className="sidebar-content">
+                <h4>💩 Drop a New Poop Spot</h4>
+                <p><strong>📍 Address:</strong> {address || `${addingLocation[0].toFixed(5)}, ${addingLocation[1].toFixed(5)}`}</p>
+                <form onSubmit={handleAddNewToilet}>
+                  <input type="text" placeholder="Name" value={newToilet.name} onChange={(e) => setNewToilet({ ...newToilet, name: e.target.value })} required />
+                  <textarea placeholder="Comment or description" value={newToilet.description} onChange={(e) => setNewToilet({ ...newToilet, description: e.target.value })} />
+
+                  {[['Cleanliness ⭐', 'cleanliness'], ['Accessibility ♿', 'accessibility'], ['Crowdedness 🚶', 'crowd']].map(([label, key]) => (
+                    <div key={key} style={{ marginTop: '12px' }}>
+                      <label>{label}</label>
+                      <StarRating value={ratings[key]} onChange={(val) => setRatings({ ...ratings, [key]: val })} />
+                    </div>
+                  ))}
+
+                  <div className="form-button-row">
+                    <button type="submit">💾 Drop It</button>
+                    <button type="button" onClick={() => { setAddingLocation(null); setAddress(''); }}>❌ Cancel</button>
+                  </div>
+                </form>
+              </div>
+            ) : selectedToilet ? (
+              <div className="sidebar-content">
+                <button className="button-back" onClick={() => setSelectedToilet(null)}>← Go Back</button>
+                <h2>{selectedToilet.name} <span style={{ fontWeight: 'normal' }}>{averageRating(selectedToilet.ratings)}</span></h2>
+                <p>{selectedToilet.description}</p>
+                <p>{selectedToilet.address}</p>
+
+                <a
+                  className="button-go"
+                  href={`https://www.google.com/maps/dir/?api=1&destination=${selectedToilet.lat},${selectedToilet.lng}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  🧭 Go Poop
+                </a>
+
+                <h3>💬 Poop Reviews</h3>
+                <ul style={{ padding: 0 }}>
+                  {[...selectedToilet.comments].sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)).map((comment, index) => (
+                    <li key={index} style={{ listStyle: 'none', borderBottom: '1px solid #ccc', paddingBottom: '8px', marginBottom: '8px' }}>
+                      {comment.text} <span style={{ color: '#888', fontSize: '0.8rem' }}>({new Date(comment.timestamp).toLocaleString()})</span>
+                    </li>
+                  ))}
+                </ul>
+                <form onSubmit={(e) => handleCommentSubmit(e, selectedToilet.id)}>
+                  <input type="text" name="comment" placeholder="💬 Add your poop review..." value={commentText} onChange={(e) => setCommentText(e.target.value)} required style={{ width: '100%', marginTop: '12px', padding: '8px', border: '1px solid #000' }} />
+
+                  {[['Cleanliness ⭐', 'cleanliness'], ['Accessibility ♿', 'accessibility'], ['Crowdedness 🚶', 'crowd']].map(([label, key]) => (
+                    <div key={key} style={{ marginTop: '12px' }}>
+                      <label>{label}</label>
+                      <StarRating value={commentRating[key]} onChange={(val) => setCommentRating({ ...commentRating, [key]: val })} />
+                    </div>
+                  ))}
+
+                  <button type="submit" style={{ marginTop: '8px', padding: '8px', fontWeight: 'bold' }}>💩 Submit</button>
+                </form>
+              </div>
+            ) : (
+              <div className="sidebar-list">
+                <h2>📍 Poop Stops Nearby (Closest First)</h2>
+                <ul className="toilet-list">
+                  {sortedToilets.map((toilet) => (
+                    <li key={toilet.id} className="mondrian-card" onClick={() => {
+                      setSelectedToilet(toilet);
+                      setSidebarVisible(true);
+                    }} style={{ width: '100%', boxSizing: 'border-box' }}>
+                      <div className="block name">{toilet.name}</div>
+                      <div className="block rating">⭐ {averageRating(toilet.ratings)}</div>
+                      <div className="block distance">🚣 {Math.round(toilet.distance)} m</div>
+                      <div className="block summary">{toilet.summary || 'No summary yet 💩'}</div>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        )}
       </div>
     </div>
   );
