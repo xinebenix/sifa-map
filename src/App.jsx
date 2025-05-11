@@ -49,7 +49,7 @@ function App() {
   }, []);
 
   function fetchToilets() {
-    fetch("http://localhost:3000/toilets")
+    fetch("https://sifa-backend.onrender.com/toilets")
       .then(res => res.json())
       .then(data => setToilets(data))
       .catch(err => console.error("Failed to load toilets:", err));
@@ -90,7 +90,7 @@ function App() {
       createdAt: new Date().toISOString()
     };
 
-    fetch("http://localhost:3000/toilets", {
+    fetch("https://sifa-backend.onrender.com/toilets", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload)
@@ -119,7 +119,7 @@ function App() {
       ratings: commentRating
     };
 
-    fetch(`http://localhost:3000/toilets/${toiletId}/comment`, {
+    fetch(`https://sifa-backend.onrender.com/toilets/${toiletId}/comment`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(newCommentData)
