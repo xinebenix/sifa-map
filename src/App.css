@@ -240,7 +240,7 @@ h1.mondrian-header {
   }
 
   .sidebar {
-    height: 70vh;
+    height: 70vh !important;
     max-width: 100%;
     border-left: none;
     border-top: 6px solid #000;
