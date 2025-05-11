@@ -67,6 +67,10 @@ function App() {
           .then(res => res.json())
           .then(data => setAddress(data.display_name || ''))
           .catch(() => setAddress(''));
+      },
+      moveend(e) {
+        const center = e.target.getCenter();
+        setMapCenter([center.lat, center.lng]);
       }
     });
     return null;
@@ -168,9 +172,9 @@ function App() {
       <h1 className="mondrian-header">🚽</h1>
       <div className="map-and-sidebar">
         <div id="map-wrapper" style={{ flex: shouldShowSidebar ? 2 : 1 }}>
-          <MapContainer defaultCenter={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
             <TileLayer attribution='&copy; OpenStreetMap contributors' url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png' />
-            <ClickHandler />
+            <ClickHandler onCenterChange={setMapCenter} />
             {toilets.map((t) => (
               <Marker key={t.id} position={[t.lat, t.lng]} eventHandlers={{
                 click: () => {
