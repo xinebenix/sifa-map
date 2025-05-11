@@ -234,7 +234,7 @@ h1.mondrian-header {
   }
 
   #map-wrapper {
-    flex: none; /* 👈 关键 */
+    flex: none !important;
     height: 30vh;
     border-right: none;
     border-bottom: 6px solid #000;
