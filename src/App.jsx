@@ -41,10 +41,29 @@ function App() {
   const [commentRating, setCommentRating] = useState({ cleanliness: 3, accessibility: 3, crowd: 3 });
 
   useEffect(() => {
-    navigator.geolocation.getCurrentPosition(
-      (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
-      () => console.warn('Geolocation failed. Using default location.')
-    );
+    navigator.permissions?.query({ name: "geolocation" }).then((result) => {
+      if (result.state === "granted") {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude])
+        );
+      } else if (result.state === "prompt") {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            setMapCenter([pos.coords.latitude, pos.coords.longitude]);
+            window.location.reload(); // 自动刷新让地图以当前中心加载
+          },
+          () => {
+            console.warn('User denied location access.');
+          }
+        );
+      }
+    }).catch(() => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+        () => console.warn('Geolocation failed. Using default location.')
+      );
+    });
+
     fetchToilets();
   }, []);
 
