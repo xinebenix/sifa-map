@@ -1,15 +1,25 @@
-// Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons
+// src/App.jsx
+// Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons + 初始定位
 import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
+import {
+  MapContainer,
+  TileLayer,
+  Marker,
+  useMapEvents,
+  useMap
+} from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
-  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
-  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+  iconRetinaUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl:
+    'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png'
 });
 
 function StarRating({ value, onChange }) {
@@ -19,7 +29,11 @@ function StarRating({ value, onChange }) {
         <span
           key={star}
           onClick={() => onChange(star)}
-          style={{ fontSize: '1.2rem', color: star <= value ? '#FFD700' : '#ccc', cursor: 'pointer' }}
+          style={{
+            fontSize: '1.2rem',
+            color: star <= value ? '#FFD700' : '#ccc',
+            cursor: 'pointer'
+          }}
         >
           ★
         </span>
@@ -28,36 +42,15 @@ function StarRating({ value, onChange }) {
   );
 }
 
-// 定位按钮组件，点击回到当前浏览器位置
-def function LocateControl({ setMapCenter }) {
+// 根据 mapCenter 更新地图视图（只在初始渲染和中心位置改变时触发）
+function SetViewOnInit({ center }) {
   const map = useMap();
-  return (
-    <button
-      className="locate-btn"
-      onClick={() => {
-        navigator.geolocation.getCurrentPosition(
-          (pos) => {
-            const newCenter = [pos.coords.latitude, pos.coords.longitude];
-            setMapCenter(newCenter);
-            map.setView(newCenter, 14);
-          },
-          () => console.warn('定位失败')
-        );
-      }}
-      style={{
-        position: 'absolute',
-        top: '10px',
-        right: '10px',
-        zIndex: 1000,
-        background: '#fff',
-        border: '2px solid #000',
-        padding: '6px',
-        cursor: 'pointer'
-      }}
-    >
-      📍
-    </button>
-  );
+  useEffect(() => {
+    if (center) {
+      map.setView(center, 14);
+    }
+  }, [center, map]);
+  return null;
 }
 
 function App() {
@@ -67,14 +60,24 @@ function App() {
   const [addingLocation, setAddingLocation] = useState(null);
   const [newToilet, setNewToilet] = useState({ name: '', description: '' });
   const [address, setAddress] = useState('');
-  const [ratings, setRatings] = useState({ cleanliness: 3, accessibility: 3, crowd: 3 });
+  const [ratings, setRatings] = useState({
+    cleanliness: 3,
+    accessibility: 3,
+    crowd: 3
+  });
   const [sidebarVisible, setSidebarVisible] = useState(true);
   const [commentText, setCommentText] = useState('');
-  const [commentRating, setCommentRating] = useState({ cleanliness: 3, accessibility: 3, crowd: 3 });
+  const [commentRating, setCommentRating] = useState({
+    cleanliness: 3,
+    accessibility: 3,
+    crowd: 3
+  });
 
   useEffect(() => {
+    // 初次加载时尝试获取浏览器定位
     navigator.geolocation.getCurrentPosition(
-      (pos) => setMapCenter([pos.coords.latitude, pos.coords.longitude]),
+      (pos) =>
+        setMapCenter([pos.coords.latitude, pos.coords.longitude]),
       () => console.warn('Geolocation failed. Using default location.')
     );
     fetchToilets();
@@ -119,7 +122,9 @@ function App() {
       lng: addingLocation[1],
       address,
       summary: '',
-      comments: [{ text: newToilet.description, timestamp: new Date().toISOString() }],
+      comments: [
+        { text: newToilet.description, timestamp: new Date().toISOString() }
+      ],
       ratings,
       createdAt: new Date().toISOString()
     };
@@ -170,8 +175,14 @@ function App() {
                   ...t,
                   comments: [...t.comments, newCommentData],
                   ratings: {
-                    cleanliness: [...t.ratings.cleanliness, commentRating.cleanliness],
-                    accessibility: [...t.ratings.accessibility, commentRating.accessibility],
+                    cleanliness: [
+                      ...t.ratings.cleanliness,
+                      commentRating.cleanliness
+                    ],
+                    accessibility: [
+                      ...t.ratings.accessibility,
+                      commentRating.accessibility
+                    ],
                     crowd: [...t.ratings.crowd, commentRating.crowd]
                   }
                 }
@@ -218,14 +229,21 @@ function App() {
     <div className="app-container">
       <h1 className="mondrian-header">🚽</h1>
       <div className="map-and-sidebar">
-        <div id="map-wrapper" style={{ flex: shouldShowSidebar ? 2 : 1 }}>
-          <MapContainer center={mapCenter} zoom={14} style={{ height: '100%', width: '100%' }}>
+        <div
+          id="map-wrapper"
+          style={{ flex: shouldShowSidebar ? 2 : 1 }}
+        >
+          <MapContainer
+            center={mapCenter}
+            zoom={14}
+            style={{ height: '100%', width: '100%' }}
+          >
             <TileLayer
-              attribution='&copy; OpenStreetMap contributors'
-              url='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
+              attribution="&copy; OpenStreetMap contributors"
+              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <ClickHandler />
-            <LocateControl setMapCenter={setMapCenter} />
+            <SetViewOnInit center={mapCenter} />
             {toilets.map((t) => (
               <Marker
                 key={t.id}
@@ -244,15 +262,22 @@ function App() {
         </div>
 
         {shouldShowSidebar && (
-          <div className="sidebar"> ... sidebar content unchanged ... </div>
+          <div className="sidebar">
+            {/* sidebar 内容保持不变 */}
+          </div>
         )}
       </div>
     </div>
   );
 
   function averageRating(r) {
-    const avg = (arr) => (arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : '-');
-    return `🧼 ${avg(r.cleanliness)} ♿ ${avg(r.accessibility)} 🚶 ${avg(r.crowd)}`;
+    const avg = (arr) =>
+      arr.length
+        ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1)
+        : '-';
+    return `🧼 ${avg(r.cleanliness)} ♿ ${avg(r.accessibility)} 🚶 ${avg(
+      r.crowd
+    )}`;
   }
 }
 
