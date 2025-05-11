@@ -249,6 +249,10 @@ h1.mondrian-header {
   .sidebar-toggle {
     display: block;
   }
+
+  .sidebar-content {
+    padding-bottom: 80px;
+  }
 }
 
 .button-back {
