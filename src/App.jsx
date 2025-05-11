@@ -1,7 +1,7 @@
 // src/App.jsx
 // Finalized JSX with map drag refresh + star layout and spacing + Go Back & Go Poop buttons
-import React, { useEffect, useState } from 'react';
-import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import React, { useEffect, useState, useEffect as useEffectHook } from 'react';
+import { MapContainer, TileLayer, Marker, useMapEvents, useMap } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -49,6 +49,17 @@ function ClickHandler({ onMapClick, onMapMove }) {
       onMapMove([center.lat, center.lng]);
     }
   });
+  return null;
+}
+
+// ▶️ 新增：当 mapCenter 更新时，重新设置地图视图
+function Recenter({ center }) {
+  const map = useMap();
+  useEffectHook(() => {
+    if (center) {
+      map.setView(center, map.getZoom());
+    }
+  }, [center, map]);
   return null;
 }
 
@@ -221,6 +232,7 @@ export default function App() {
               attribution="&copy; OpenStreetMap contributors"
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
+            <Recenter center={mapCenter} />
             <ClickHandler onMapClick={handleMapClick} onMapMove={handleMapMove} />
             {/* 所有厕所标记 */}
             {sortedToilets.map(t => (
@@ -312,7 +324,10 @@ export default function App() {
                 <h3>💬 Poop Reviews</h3>
                 <ul style={{ padding: 0 }}>
                   {[...selectedToilet.comments]
-                    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                    .sort(
+                      (a, b) =>
+                        new Date(b.timestamp) - new Date(a.timestamp)
+                    )
                     .map((c, i) => (
                       <li key={i} style={{
                         listStyle: 'none',
@@ -321,7 +336,10 @@ export default function App() {
                         marginBottom: 8
                       }}>
                         {c.text}{' '}
-                        <span style={{ color: '#888', fontSize: '0.8rem' }}>
+                        <span style={{
+                          color: '#888',
+                          fontSize: '0.8rem'
+                        }}>
                           ({new Date(c.timestamp).toLocaleString()})
                         </span>
                       </li>
